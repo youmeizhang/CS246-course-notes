@@ -53,7 +53,7 @@ process is connected to 3 streams:\
 **cat blah.txt > rex.txt 2> err.txt**: the error info is in err.txt file, it will override the content in err.txt file\
 
 
-
+# Object
 ```c++
 struct Student(){
   int assns, mt, final;
@@ -79,9 +79,9 @@ cout<<numInstances<<endl; // or cout<<printInstance()<<endl;
 }
 ```
 * **notes**
-  * mutable fields can be changed even if the object is constant\
-  * static field is associated with a class and not with a particular object (instance of class)\
-  * static field should be initialized outside the struct definition\
+  * mutable fields can be changed even if the object is constant
+  * static field is associated with a class and not with a particular object (instance of class)
+  * static field should be initialized outside the struct definition
   * static method functions doesn't have implicit this and can only access static fields, so don't define struct as static. static function can only call other static functions
 
 int Student: Instances=0; // method can call other methods
@@ -93,9 +93,9 @@ int main() {
   ...
 }
 ```
-for destructor, when we call delete next, next should be one of the following type so destructor can work successfully: \
+for destructor, when we call delete next, next should be one of the following type so destructor can work successfully: 
 1. nullptr\
-2: allocated in heap
+2. allocated in heap
 
 ```c++
 Struct Node{
@@ -117,3 +117,52 @@ class Node{ // with class, the default visibility is private
 }
 ```
 
+## Encapsulation
+```c++
+auto x = y; // the type of x is the same as y
+```
+C++'s built in support the iterator pattern: the range based loop
+``` C++
+//include iterator in class list, including begining, end, advancing
+for (auto &n: lst){ // n is the copy of any item in the list. For will go to the beginning and go through the list
+ cout<<n<<endl; // if you want to change the value in lst, then change it to &n, otherwise you can not change lst, because n is just a copy
+}
+
+auto it = list::Iterator(nullptr);// conflict, make it private
+
+class list{
+ ...
+public
+class Iterator{
+  Node *p
+  explicit Iterator ...; // Iterator is private, users can not access it, but list needs access to it
+ public
+  friend class list; // solution: create friendship between different classes, so list has all the access to iterator now
+  ... // gold rule: don't make so many friends, otherwise conflict privacy then
+ }
+}
+```
+```C++
+class Vec{
+ int x, y;
+ 
+ vec...
+public:
+ int getX(){
+ return x; // ancessor to the field, no need to have "this", since this is a method, so return a copy from x
+ }
+ void setY(int newY){ // mutator
+  y = newY;
+ }
+}
+
+int main(){
+ Vec v1(1, 10);
+ cout<<v1.getX()<<endl;
+ 
+friend header operator; // if we want to override <<: use standalone function and define it outside the struct definition
+//only declare it as friend here
+}
+
+//actual definition of operator
+```
