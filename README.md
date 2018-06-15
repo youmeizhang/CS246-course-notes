@@ -657,6 +657,100 @@ for const: add const in .h and .cc and assign value in .cc (only use in main)
 * Must put all header files in \#include guards
 
 # Class
+```C++
+struct Student{ // class
+ int assns, mt, final;
+ float grade(){ // this is method member function
+  return assns * 0.4 + mt * 0.2 + final * 0.4;
+ }
+}
+
+int main(){
+ Student s{70, 80, 90};
+ Student s2{20, 10, 30};
+ cout<<s.grade()<<endl;
+ cout<<s2.grade()<<endl; 
+}
+```
+Formally, methods take a hidden extra parameter called **this** which is a parameter to the object upon which the method was invoked\
+```C++
+// three ways to represent
+int x = 5;
+string s = "hello";
+
+int x(5);
+string s("hello");
+
+int x{5}; // this is preferred
+string s{"hello"};
+
+Student(int assns, int mt, int final){ // overloading the old one, constructor function
+ this --> assns = assns; // first one is field, second one is value, it means parameters
+ this --> mt = mt;
+ this --> final = final;
+}
+
+Student *pJame = new Student{99, 99, 99}; // pJame is in stack, {99, 99, 99} is in heap
+```
+## Constructor
+* Advantage of creating constructors
+  * default parameters
+  * overloading
+  * sanity check
+  * logic other than the simple field init
+  
+```C++
+student(int assns = 0, int mt = 0, int final = 0){
+ this --> assns = assns;
+ ...
+}
+
+student Mary{100, 90, 98};
+student Dave; // default: 0, 0, 0
+student Jane{100, 99}; // the last parameter is 0
+
+struct MyStruct{
+ const int myConst; // reference const has to be initialized, so this is a problem
+ int &myRef;
+}
+
+// Solution
+int z = 0;
+stuct MyStruct{
+ const int myConst = 5;
+ int &myRef = z;
+}
+```
+Even though it solves the problem, but it is not acceptable in real life because everyone might have their own value of structure. Where do we initialize? If it is in constructor body, then it is too late. Because fields must be fully constructed by the time the constructor body runs\
+* What happens when an object is created?
+  * space is allocated
+  * fields are constructed 
+  * constructor body runs
+  
+So, it should be initialized in the second step when fields are constructed. Solution: **MIL** Member Initialization List
+```C++
+struct student{
+ const int id;
+ int assns, int mt, int final; // fields
+ student(int id, int assns, int final):id{id}, assns{assns}, mt{mt}, final{final} // id: field, {id}: parameter
+ {} // if you dont initialize in last line, then should be initialized here
+}
+```
+* Notes
+  * you should initialize any fields using MIL
+  * fields in MIL are initialized in the order in which they are declared in the class
+  * MIL can be move efficient than doing initialization in the constructor body
+```C++
+struct student{
+ string name;
+ student(const string & name){
+  this --> name = name;
+ }
+}
+```
+
+
+
 
 
 # Object
