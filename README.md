@@ -1,10 +1,6 @@
 # CS246 Course Notes
-# Shell
-shell --> program, os --> interface\
-check your own shell: echo $0
-
 # Linux File System
-* /  (root of your local system)
+* /  root of your local system
   * bin
   * etc
   * home
@@ -100,7 +96,7 @@ definition: one stdout becomes another file's stdin, such as a | b | c\
 **egrep -c**:\
 **ls -l**: with more details\
 **-rw-r_ _ _ _ _ j2smith j2smith 2s seq 9 15:27 fl.txt**:
-* - file, d directory
+* \- file, d directory
 * a bits
   * rwx: user permission (owner)
   * rwx: group
@@ -264,26 +260,32 @@ cout<<setw(4)<<x<<set(6)<<y<<endl; // _ _15 _ _ _ 124
 * oct
 
 ## String in C++
-In C, array of characters (char\* or char[]), terminated by \\0\
-string grows as needed\
-safe to manipulate strings
+* In C, array of characters (char\* or char[]), terminated by \\0
+  * must explicitly manage memory allocate more memory as strins get larget
+  * easy to overwrite \\0 and corrupt memory
+* In C++
+  * string grows as needed, no need to manage memory
+  * safe to manipulate string s = "hello"
 
 * string operatons
   * == !=
   * < <= > >=
   * s.length(): returns the length of s, include <string>
-  * s[0], s[1] ... 
+  * fetch individual chars: s[0], s[1] ... 
   * concatenation s3 = s1 + s2; s += s2;
  
 **String s**: don't need to include library string\
 **cin>>s;**: reads a string, skips leading whitespace, stop reading at next whitespace, e.g: read a word\
 **cout<<s;**:\
-**getline(cin, s);**: reads to the next newline character\
+**getline(cin, s);**: if we want to read the whitespace, this reads to the next newline character into s
+
+Anything you can do with cin cout, you can do with an ifstream and ofstream\
 **std::ifstream**: to read data from a file\
 **std::ofstream**: to write data to a file\
 **ostringsream**: writes to a given string, store there and nothing printed\
 **istringstream**: 
-You should include <fstream>, <iostream> for stdinp / out / err
+You should include <fstream>, <iostream> for stdinp / out / err\
+An ostringstream is useful (should include sstream) when we need to build up our output a little at a time but do not want to print the output until later. We can, "write" the output to an in-memory ostringstream. Iostream classes handle IO to console (should incude iostream)
  
  ```C++
  int main(){
@@ -311,25 +313,350 @@ You should include <fstream>, <iostream> for stdinp / out / err
  cout<<s<<endl;
  
  //default function parameters
- void printSuiteFile(string name = "suite.txt"){
+ void printSuiteFile(string name = "suite.txt"){ // default value
   print the content of the name;
  }
  
  int main(){
-  print SuiteFile();
-  print SuiteFile("suite2.txt");
+  print SuiteFile(); // prints from suite.txt
+  print SuiteFile("suite2.txt"); // prints from suite2.txt optional parameter must be last
  }
  ```
+## Overloading
+Even though the number of parameters ot the type of parameters are different, you can still have same function name
+```C++
+int neg(int a);
+bool neg(int a);
+// This is not allowed since the int and bool is not enough to distingui the function
+// Overloading must differ in number of types of arguments, they can not differ on just the return type
+
+void f(int a, int b = 1){...} // call it as f(5), it is confusing which to call, because b is initialized
+void f(int a){...}
+```
+We can't define function twice but can declare it more than once. You can not use something beforeit has been declared, so declaration before using
+```C++
+declare int odd(int a) // recursive
+int even(int a){
+ it calls odd()
  
- ## Overloading
- 
+int odd(int a){
+ it calls even()
+}
+}
+```
+## Pointers
+```C++
+int f(int x){
+ x = x + 10
+}
+
+int main(){
+ int y = 10;
+ f(y) // in stack, y = 10, x = 20 but out of the scope, x is not accessible anymore
+}
+```
+| variable | stack |
+| --- | --- |
+| x | 20 |
+| y | 10 |
+```C++
+int n = 5;
+int *p = 8n; // initialize p with address of n, 
+
+// two ways of changing the value that ptr pointing at
+n = 50
+*p = 100
+
+m = 1000
+p = 8m // p points to m now
+*p = 20 // m becomes 20 now, not 1000 anymore
+
+int a[] = {10, 20, 30, 0}
+int *p = a // wrong, a must be int
+
+a[0] = *a
+a[1] = *(a+1)
+
+int **pp = 8p; // means pointer to an integer pointer
+
+struct Node{
+ int data;
+ Node *next; // pointer to type Node,  pointer to something is not completely defined is find
+};
+
+// constants: not to change as variable, then declare them as constants
+const int n = 5;
+      n = ... // not allowed
+      
+const int m; // wrong, should initialize m
+const int n = 100;
+const int *p = 8n; // type should match, so n is const, the content of const is not changeable
+const int *const p = &n; // can not make p point somewhere else, can not change the data p points to
+
+const int *p = &n; // p is pointer to const int, p can be reassigned but *p can not be assigned  *p = 6 is wrong
+int *const p = &n; // p is const pointer to non-const int, cannot change what p points to, can change the data p points to *p = 6
+
+const int m = 20;
+const int p = 8m; // correct
+const int *p = 30; // wrong 
+// right to left, p is a const pointer to an integer, so cannot change what p is pointing to
+
+int * const p = 8n;
+p = 8m; // wrong
+*p = 100; // correct
+
+const int * const p = 8n
+p = 8m; // correct
+*p = 100; // wrong
+
+Node n{5, nullptr};
+const Node n2 = n1; // n2 is constant but n1 is not, immutable copy of n1
+
+void inc(int n){
+ n = n + 1;
+}
+
+int main(){
+ int x = 10;
+ inx(x); // n goes out of scope here
+ cout<<x<<endl; // so, x = 10, 10 will be printed not 11
+}
+
+// Solution:
+void inc(int *n){
+ *n = *n + 1;
+}
+
+int main(){
+ int x = 10;
+ inc(&x) // pass the address to the pointers, so not to pass the name of variable
+ cout<<x<<endl;// 11 will be printed
+}
+```
+| variable | stack |
+| --- | --- |
+| m | 1000 |
+| p | 8n |
+| n | 50 |
+
+## Reference
+C++ has another pointers like: reference. The type is reference, but it is similar to pointer
+```C++
+int y = 10;
+int &z = y; // just write the name of the variable, name to pass not the address
+// z is like const pointers, can not change what it points to and y is not constant, but z is
+
+z = 100; // change y value, instead of *z = 100
+// so now, z is like a alias to y, a is lvalue reference
+
+&z = y; // when initializing, y can be only lvalue
+int *p = &z; // taking the address of z gives the address of y, so z behaves exactly like y
+
+int &x = 3; // wrong
+int &x = y + z; // wrong, expression is not lvalue
+int &*p; // wrong, pointer to a reference is not fine
+int *&z = ... // correct, reference to a pointer is fine
+int &&r; // correct, but not recommend for using
+
+int &r[3] = {n, n, n} // wrong
+
+void inc(int &n){
+ n = n + 1;
+}
+
+int main(){
+ int x = 10;
+ inc(x) // initialize &n = x
+ cout<<x<<endl; // print 11
+}
+
+int f(int &n){...} // &n is const
+int g(const int &n){...} // int is const
+
+f(5) // X
+g(5) // in c++, V
+
+int f(int &n){...}
+int g(const int &n){...} // but const int *const x: not correct
+f(5) // X, can not initialzed lvalue ref n to a literal value, if n changes, cannot change the literal 5
+g(5) // V, since n never change. the compiler create a temporary location in memory to hold the 5, so the reference n has something to point at 
 
 
+```
+* lvalue: left-hand value, y = 5, y is lvalue, the value which you can assign something to it
+* rvalue: right-hand, 5, which you can not assign something to it
+* Things you can not do with lvalue references
+  * leave them uninitialized: must initialize them with sth that has an address
+  * create a pointer to a reference: int &\*x is not OK
+  * a reference to a pointer is OK: int \*&x
+  * create a reference to a reference: int &&r
+  * create an array of references int &r[3] = {n, n, n} not OK
+  
+* Pass as function parameters. Prefer pass-by-const-ref over pass-by-value for anything larger than an int, unless the function needs to make a copy anyway. Then possibly use pass-by-value.
 
+## Dynamic Memory Allocation
+In C++, malloc / free are available, but do not use them, use new / delete instead
+* all local variables resides on the stacj
+* allocated memory resides on the heap
+```C++
+struct Node{
+ int data;
+ Node *next;
+};
 
+Node *np = new Node; // np is stored in stack, they are not free until you freeze them, different from stack
+delete np; // np still have address, but not accessible
 
+Node(n);
+np = &n; // then np points to n
 
+Node *myNode = new Node[10]; // array of 10 nodes in the heap, myNode is on the stack, point to the beginning of the array
+delete [] myNode; // remember the []
+```
+* if memory is allocated with ordinary new, it must be deallocated with ordinary delete
+* if memory is allocated with array new, it must be deallocated with array delete []
 
+## returning by value / pointer / reference
+```C++
+Node getMeNode(){
+ Node n;
+ ...
+ return; // returning a node by value, if node is large, then it is very expensive, so return a reference
+}
+
+Node *getMeNode(){
+ Node n; // definition in the function, but out of it, it is not accessible, so bad solution
+ ...
+ return &n;
+}
+
+Node *getMeNode(){
+ Node *np = new node; // allocated on the heap
+ ...
+ return np; // the address of the node on the heap
+}
+//need another function to free the memory later on
+```
+
+## Operator Overloading
+```C++
+struct vec{
+ int x, y;
+};
+```
+vec v1{1, 2};\
+vec v2{3, 4};\
+vec v3 = v1 + v2;\
+vec v4 = 3 + v3;\
+vec v5 = v3 * 10;
+
+```C++
+operator+(const vec &v1, const vec &v2){ // overload, type is vec, original function name for "+" operation
+ vec res{v1 x + v2 x, v1 y + v2 y};
+ return res;
+}
+
+struct Grade(){
+ int theGrade;
+}
+
+cout<<x<<y<<z<<endl; // cout stream
+
+ostream &operator<<(ostream &out, const Grade &g){
+ cout<<g theGrade<<% // add the %
+}
+istream &operator>>(istream &in, Grade &g) // Grade is not const we need to put something into it
+```
+## Processor
+1. **#include \<iostream>**: copy into your program, insert the content of file iostream here. <> means look in standard include library (usr/include/c++/...)
+2. **#include "filename.ext"**: the file you have, it is in the same directory. "" means look in the current directory
+3. #include <\/../../../library>: you can not do this by importing your own file name
+
+\#define VAR VALUE\
+Set a preprocessor variable. Then all occurrences of VAR in the source file are replaced with VALUE
+
+C++: const VAR = VALUE
+```C++
+// gcc14 program.cc
+// gcc14 -D debug1 Program.cc
+#if O(false)
+  skip
+#endif
+#ifdef debug1 // It means if debug1 is defined, then True
+ print... // execute without this section: program.cc
+#endif
+
+#define FLAG // set the variable FLAG, its value is the empty string
+#if 0 // This is never true, so all of the inner text is removed before the compiler sees it
+...
+#endif
+```
+## Seperate Compilation
+split program into modules, each module provide:
+* interface (.h)
+  * type definitions and prototypes for functions
+* implementation (.c)
+  * full details, function definitions allocating spaces
+```C++
+//vector.h
+struct vec{
+ int x;
+ int y;
+}
+
+//vector.cc
+#include "vector.h"
+vec operator+(...){
+ vec V;
+}
+extern int globalNum; // declaration here, when main imports vector then it is defined more than once, fix it: add extern 
+
+//main.cc (cliend)
+#include "vector.h"{
+vec v1 = {1, 2};
+v = v + v;
+globalNum = ...; // use it here
+}
+
+//linearAlg.h
+#include "vector.h"
+...
+
+//linearAlg.cc
+#include "vector.h"
+#include "linearAlg.h"
+..
+
+//main.cc
+#include "vector.h"
+#include "linearAlg.h" // it contains the vector.h again, so it is defined more than once
+
+// Solution: for every .h file include a guard for any interface
+
+#ifndef -VECH-
+#define -VECH-
+...
+//the content of .h file here
+
+#endif
+```
+g++14 -c vector.cc\
+g++14 -c main.cc\
+for these two, they do not link together, produce .O object file do not create execute code\
+vector.o, main.o\
+**g++14 vector.o main.o -o main**: link all objects files together and create an executable main, otherwise, default is a.out
+* Never ever compile .h file
+* Never ever include .c or .cc file
+
+What if we want a module .h to provide a global variable?\
+put the variable in the .cc file\
+for const: add const in .h and .cc and assign value in .cc (only use in main)
+
+* Always include guards in .h files
+* Never put using namespace std in .h files. The using directive will be forced upon any client who includes the file. Always refer to cin, cout, endl, string, etc. as std::cin, std::cout, etc. in header files.
+* Must put all header files in \#include guards
+
+# Class
 
 
 # Object
