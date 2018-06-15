@@ -657,6 +657,7 @@ for const: add const in .h and .cc and assign value in .cc (only use in main)
 * Must put all header files in \#include guards
 
 # Class
+The big innovation in OOP, can put functions inside structures. Class means a structure that can potentially contain functions. The function inside the class is also called method or member function. An object is an instance of a class. 
 ```C++
 struct Student{ // class
  int assns, mt, final;
@@ -697,7 +698,7 @@ Student *pJame = new Student{99, 99, 99}; // pJame is in stack, {99, 99, 99} is 
   * default parameters
   * overloading
   * sanity check
-  * logic other than the simple field init
+  * logic other than the simple field initialization
   
 ```C++
 student(int assns = 0, int mt = 0, int final = 0){
@@ -721,7 +722,7 @@ stuct MyStruct{
  int &myRef = z;
 }
 ```
-Even though it solves the problem, but it is not acceptable in real life because everyone might have their own value of structure. Where do we initialize? If it is in constructor body, then it is too late. Because fields must be fully constructed by the time the constructor body runs\
+Even though it solves the problem, but it is not acceptable in real life because everyone might have their own value of structure. Where do we initialize? If it is in constructor body, then it is too late. Because fields must be fully constructed by the time the constructor body runs
 * What happens when an object is created?
   * space is allocated
   * fields are constructed 
@@ -737,9 +738,9 @@ struct student{
 }
 ```
 * Notes
-  * you should initialize any fields using MIL
-  * fields in MIL are initialized in the order in which they are declared in the class
-  * MIL can be move efficient than doing initialization in the constructor body
+  * you should initialize **any** fields using MIL, not just const and refs
+  * fields in MIL are initialized in the order in which they are declared in the class even if the MIL orders them differently
+  * MIL can be move efficient than doing initialization in the constructor body. For fields that are objects, if they are not listed in the MIL, they are default-constructed. If you initialize them in the body, they are initialized twice which is wasteful
 ```C++
 struct student{
  string name;
@@ -747,14 +748,279 @@ struct student{
   this --> name = name;
  }
 }
+
+struct vec{
+ int x = 0, y = 0;
+ vec(int x):x{x}
+ {}
+}
+
+vec v1{5}; // the init in MIL takes precedence over the in-class init
+
+student billy{60, 70, 80};
+student bobby = billy // copy constructor
+student(const student &other){
+assns{other.assns}, mt{other.mt}, final{other.final} // other refers to billy, passing to a reference, we pass the actual value not address
+{}
+}
+
+Struct Node{
+ int data;
+ Node *next;
+ Node(int data, Node *next): data{data}, next{next} // here pass the parameter. constructors
+ {}
+}
+
+Node *n = new Node{1, new Node{2, new Node{3, nullptr}}};
+Node m = *n; // the value m is pointing to the structure, this is copy constructors, a shallow copy
+Node *p = new Node{*n}; // Node{*n} is the value that n is pointing at
 ```
 
+| variable  | content |
+| ------------- | ------------- |
+| p  | --> 1  |
+| m  |  --> 2 --> 3 |
+| n  | 1 --> 2 --> 3  |
 
+```C++
+struct Node{
+ Node (const Node &other): data{data}, next{other.next? new Node{*other.next}:nullptr} // deep copy
+ {}
+}
+```
+* By default, every class comes with
+  * a default constructor (default-constructs all fields that are objects, lost if you define any constructor, default constructor should be able to consumes zero argument)
+  * a copy constructor (just copy all fields)
+  * a copy assignment operator
+  * a destructor
+  * a move constructor
+  * a move assignment operator
+* The copy constructor is called
+  * when an object is initialized by another object int x = y
+  * when an object is passed by value
+  * when an object is returned by a function
+Be careful with constructors that can take one parameter
+```C++
+struct Node{
+ ...
+ explicit Node(int data): data{data}, next{nullptr}{}
+}
 
+Node n(4); // ok
+Node n = 4; // n is a Node, but 4 is not a Node, 4 can be regarded as an object
+// if int f(Node n){...}, f(4), then it is not valid anymore, so add explicit in the above code
+// for only passing the node value
 
+Node n; // default constructor
+Node m = n; // copy constructor two step: 1. need to copy constructor in stack 2. copy value of n to m
 
-# Object
-```c++
+Struct Node{
+ int data;
+ Node *next;
+ Node(int data = 0, Node *next = nullptr)
+ {}
+ // or Node(): data{0}, next{nullptr}{} // other overloading constructors
+}
+
+Node(const Node &other){ // copy constructor
+ data{other.data};
+ next{other.next ? new Node{other.next} : nullptr} // next{other.next} shallow copy constructors
+ {} // n: 1 --> 2 --> 3 m: 1
+}
+
+Node *np --> 1 --> 2 --> 3 (on heap) // chain of node
+delete np; // it will free 1 but not 2 and 3
+```
+## Destructor
+* object is destroyed
+  * stored in stack, after out of scope, destructor is invoked
+  * stored in heap, when delete it in heap, destructor is invoked
+* a method destructor runs
+  * destrcutor body runs
+  * destructor is invoked for fields that are objects in reverse declaration order
+  * space is deallocated
+```C++
+~ Node(){delete next}; // this is defined inside the structure, the last node destructed first, then the second to last
+
+//these are defined, so need to free them
+Node n{5, nullptr}; // constructor is invoked
+Node m = n; // copy constructor, creating memory in stack and then copy value
+//need to free as well
+Node w; // default constructor
+w = n; // no creating memory, copy assignment operator, just assignment
+
+Node w{5, nullptr};
+w = n; // in linkedlist, shallow copy only the first Node
+```
+## Copy Assignment Operator
+Classes come with a copy assignment operator that copy-assigns each field (a shallow copy). Thus you may need to write you own. When writing operator=, always be wary of self-assignment
+```C++
+Node &operator:(const Node &other){ // self assignment
+ if (this == &other): return *this;
+ data = other.data; // without this it is the same as copy constructors
+ delete next; // destroy all the linked list
+ next = other.next ? new Node(*other.next) : nullptr;
+ return *this;
+ // lose old data
+}
+```
+| variable  | content |
+| ------------- | ------------- |
+| n  | 1 --> 2 --> 3  |
+| w new |  1 --> 2 --> 3 |
+| w old  | 1 --> 5 --> 6  |
+
+w points to new list but 5 and 6 still in the heap, this is a problem\
+Solution: a pointer points to old data, after successfully run, delete the old pointer
+```C++
+Node &operator = (const Node &other){
+ if (this == &other) return *this;
+ Node *tmp = next;
+ next = other.next ? new Node(*other.next) : nullptr;
+ data = other.data;
+ delete tmp;
+ return *this;
+}
+
+#include <utility>
+struct Node{
+ ...
+ void swap(Node &other){
+  using std::swap
+  swap(data, other.data)
+  swap(next, other.next)
+ }
+ 
+ void &operator = (){
+  Node tmp = other; // deep copy, copy constructor
+  swap(tmp); // swap between tmp & this
+  return *this; // new data of w
+ }
+}
+```
+Differences between copy constructors and copy assignment operators\
+n = n; // no, because it delete all the data in the linked list if delete one
+## Rvalues and rvalue refernces
+const int x= = 5; // x is the const lvalue\
+rvalue can not be put in the left side of the assignment operator, so can not define a reference to rvalue
+```C++
+Node plusOne(Node n){
+ for (Node *p = &n; p; p = p-->next){
+  ++p --> data;
+ }
+ return n;
+}
+
+Node n{1, new Node{2, nullptr}};
+Node m3 = plusOne(n); // plusOne(n) is rvalue, so this is not copy constructor, because for ctor, it should be lvalue
+// this is a move constructor
+```
+* move constructor takes rvalue
+* copy constructor takes lvalue
+```C++
+Node (Node &&other){ // move constructor, &&other: define a reference to rvalue
+ data{other.data}; // the result of the rvalue will be assigned in memory, tmp position anywhere, then other is pointing to that address, so stealing it
+ next{other.next}; // to actual stack for storage, so copy from temporary result to m3, m3 pointing to the same list
+ other.next = nullptr; // disconnect result and other, so m3 can continue to point to that list even though other is destructed, without this, when it is out of scope, the list would be removed and m3 has nothing to point to, so need to disconnect it
+}
+
+Node &operator = (Node &&other){ // rvalue reference, destroyed by destructor
+ using std::swap;
+ swap(data, other.data);
+ swap(next, other.next);
+ return *this; // cascading same as y = x = z = w = 0
+ 
+}
+```
+* if move exists with rvalue, then move would be invoked
+```C++
+struct vec{
+ ...
+}
+
+vec makeAVec(){
+ return{0, 0}; // invoke constructor vector
+}
+
+int main(){
+ vec v = makeAVec(); // move constructor, if dont define move then copy constructor will be invoked. here initialize with v = {0, 0}
+}
+
+void doSomething(vec){ // pass by value
+ 
+}
+
+doSomething(makeAVec); // what is passing? m
+
+struct vec{
+ int x, y;
+ vec operator+(const vec &other){ // 1 parameter method + this = 2 parameters, because it is defined inside the structure, so it has this parameter
+  return {x + other.x, y + other.y};
+ }
+ 
+ vec operator*(const int k){
+  return {x * k, y * k};
+ }
+}
+// outside the structure, standalone
+vec operator*(const int k, const vec &v){
+ return v * k; // not self calling
+}
+
+v1 + v2; // 2 arguements
+3 + v2; // 3 is not a vector, so not invoked
+
+3 * v2; // wrong
+v2 * 3; // correct
+```
+v<<cout; if methods, then v must be object vector\
+v>>cin; it is better to define them as standalone
+* some operators must be members
+  * operator =
+  * operator []
+  * operator -->
+  * operator ()
+  * operator T
+```C++
+//Node.h
+#ifndef _Node.H_
+#define _Node.H_
+struct Node{
+ int data;
+ Node *next;
+ explicit Node(int data, Node *next = nullptr); // be careful only one argument in a method, in this structure, no other methods defined, only accept integer as input, add explicit
+ Node(const Node &n);
+}
+
+//Node.c
+#include "Node.h"
+Node::Node(...){}
+Node::Node(...){}
+...
+// :: scope resolution operator, for methods not for standalone
+
+struct vec{
+ int x, y;
+ vec(int x, int y): x{x}, y{y}{}
+ vec(): x{0}, y{0}{} //
+}
+
+// make sure to have this vector with only one parameters
+vec *vp = new vec[10]; 
+vec moreVectors[15];
+
+// solution 1
+vec moreVectors[3] = {vec{0, 10}, vec{-1, 0}, vec{5, -3}};
+
+//solution 2
+vec **vp = new vec * [5];
+vp[0] = new vec{0, 0};
+vp[1] = new vec{-1, 10};
+
+for (int i=0; i<5; ++i){
+ delete vp[i];
+}
+
 struct Student(){
   int assns, mt, final;
   mutable int numMethodCalls = 0; // for counting how many times this mehod grade is called, only this field is mutable now
@@ -794,7 +1060,7 @@ int main() {
 }
 ```
 for destructor, when we call delete next, next should be one of the following type so destructor can work successfully: 
-1. nullptr\
+1. nullptr
 2. allocated in heap
 
 ```c++
