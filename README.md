@@ -1131,4 +1131,172 @@ friend header operator; // if we want to override <<: use standalone function an
 }
 
 //actual definition of operator
+
+class Vec{
+ int x, y;
+ public
+ friend ostream &operator... //have access to the class, declare it inside the function
+}  //either provide ancessor or make it a friend to have access into that class
+
+ostream &operator<<(ostream &out, const Vec&v){
+return out<<v.x<<" "<<v.y;
+}
 ```
+## UML
+
+| name  | Vec |
+| ------------- | ------------- |
+| fields (optional) | - x: int, - y: int |
+| methods (optional)  | + Vec() + getX(): int + getY(): int|
+
+-: means private\
++: means public
+
+## Composition
+This kind of relationship is called **OWN**: Basis "own-a" 2 Vec objects
+```C++
+class Vec{
+ int x, y;
+ public
+ Vec(int x, int y): x{x}, y{y}{}
+}
+
+class Basis{
+ Vec v1, v2
+}
+
+Basis b; // wrong, invoked default constructor: three steps will be invoked. fields are constructed
+//but the fields are vec, default constructor for vec can not be invokded because it will overload. so generate errors 
+
+class Basis{
+ Vec v1, v2
+ public
+ Basis(): v1{0, 0}, v2{0, 0}{} // solutions here: MIL, so Vec default constructor will be invoked
+}
+```
+* A "owns-a" B
+  * B has no identity beyond A (B does not exist if A does not exist)
+  * if A is destroyed then B is destroyed
+  * if A is copied then B is copied as well
+
+## Oggregation
+**"has-a"**: weaker relationship
+* A "has-a" B
+  * B has an existance outside of A
+  * if A is destroyed, B lives on
+  * if A is copied, B is not
+  * B does not know about A
+  * B can belong to more than one object at a time
+```C++
+clss Teacher{
+ string name;
+ public:
+ Teacher(string name): name{name}{}
+ string getName(){
+  return name;
+ }
+}
+
+class Department{
+ Teacher * m_teacher[100];
+ int t_Num;
+ public:
+ Department(): t_Num{0}{}
+ void add_teacher(teacher *teacher){ // shallow destructor because i dont have a defined destructor
+  m_teacher[t_Num]: teacher;
+  ++t_Num;
+ }
+};
+
+int main(){
+ Teacher *teacher = new Teacher("Bob"); // defined before department, prove that B does not know A
+ Teacher *teacher = new Teacher("Mary");
+
+ {
+ Department dept;
+ dept.add_teacher(teacher1);
+ dept.add_teacher(teacher2);
+ }
+ 
+ cout<<teacher1-->getName()<<endl;
+ delete teacher1;
+ delete teacher2;
+
+};
+```
+Another example
+```C++
+class Book{ // superclass, Base class
+ string title, author;
+ int numPage;
+ public:
+ Book(...); // constructor for Book
+}
+
+class Text{
+ string title, author;
+ int numPage;
+ string topic;
+ public:
+ Text(...);
+}
+
+class Comic{
+ string title, author;
+ int numPage;
+ string hero;
+ public:
+ Comic(...);
+
+};
+```
+* How to have one array with different types of element (OK solutions)
+  * void
+  * create a new type to be Book, Text, Comic
+  
+* subclasses inherit fields and methods from superclass
+* every subclass only has access to the public fields and public methods from the super class
+```C++
+class Book{ // superclass, Base class
+ string title, author;
+ int numPage;
+ public:
+ Book(...); // constructor for Book
+}
+
+class Text: public Book{ // subclass, Derived class
+ string topic;
+ public:
+ Text(string title, author, numPage, topic):
+ Book{title, author, numPage}, topic{topic} // step 2 and step 3
+ {} // step 4
+}
+
+class Comic: public Book{
+ string hero;
+ public:
+ Comic(...);
+
+};
+```
+* When an object is constructed
+  * memory is allocated
+  * the superclass part is constructed
+  * fields are constructed 
+  * constructor body runs
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
