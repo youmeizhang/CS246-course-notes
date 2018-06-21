@@ -1256,6 +1256,10 @@ class Comic{
   
 * subclasses inherit fields and methods from superclass
 * every subclass only has access to the public fields and public methods from the super class
+
+Two problems
+* When the superclass part is constructed, the compiler will call the default constructor of superclass, but there is no constructor in the superclass Book. (Solution: MIL to construct the superclass)
+* The fields of Book are private, subclass does not have access to that. 
 ```C++
 class Book{ // superclass, Base class
  string title, author;
@@ -1279,12 +1283,103 @@ class Comic: public Book{
 
 };
 ```
-* When an object is constructed
+* When an subclass object is constructed
   * memory is allocated
-  * the superclass part is constructed
-  * fields are constructed 
-  * constructor body runs
-  
+  * the superclass part is constructed (call the default constructor of superclass)
+  * the subclass's fields are constructed 
+  * the subclass's constructor body runs
+
+* If the superclass has no default constructor, then the subclass **must** invoke a non-default superclass constructor in MIL
+
+* To access superclass fields:
+  * make the fields public
+  * make subclass as a friend
+  * define ancestor
+  * protected the fields, only subclass can access it (can also protect methods)
+```C++
+class Book {
+ protected:
+  String title, author;
+  int numPages;
+ public:
+  Book(...);
+}
+```
+**is-a relationship**
+publiv inheritance\
+A Text "is-a" Book\
+A Comic "is-a" Book
+    Book
+     |
+   _____
+  |     |
+Text   Comic
+
+```C++
+\\ it is ok for subclass to have same name for their methods
+class Book {
+public:
+bool isItHeavy() const{return numPages > 200;}
+};
+
+class Text: public Book {
+public:
+bool isItHeavy() const{return numPages > 50;}
+};
+
+class Comic: public Book {
+public:
+bool isItHeavy() const{return numPages > 30;}
+};
+
+Book b{" ", " ", 50};
+Comic c{" ", " ", 40};
+b.isItHeavy() ==> False
+c.isItHeavy() ==> True
+
+Book b = Comic{" ", " ", 40, " "}; // the Comic value is sliced or pressed into a Book value, but it will lose some information
+b.isItHeavy() ==> False // b is now a Book object
+```
+When accessing object through pointers, slicing does **NOT** happen\
+```C++
+Comic c {" ", " ", 40, " "};
+Book *pb = &c; // Book object, does not press into Comic object
+Comic *pc = &c;
+
+pb --> isItHeavy() ==> False
+pc --> isItHeavy() ==> True
+```
+The object behaves differently depending on the type of the pointer that points at it. But this does not solve the problem that if a pointer points to both. In following example, we want c to be treated as both Comic. 
+```C++
+Solution:
+class Book{
+ bool isItHeavy() const{...}
+};
+
+class Comic: public Book{
+ bool isItHeavy() const override{...}
+};
+
+Book * myBooks[10];
+...
+for(int i = 0; i<10; i++){
+ cout<<myBooks[i]-->isItHeavy()<<endl; // then it will output based on the type of the object not based on Book 
+}
+```
+**What we do to pointers here is also True to reference**
+```C++
+Comic c{" ", " ", 40, " "};
+Book *pB {&c};
+Book &rB{c}; // reference, no need to do dref, so rB.isItHeavy() is fine
+Book *pC{&c};
+
+pB --> isItHeavy() ==> True
+Pc --> isItHeavy() ==> True
+rB.isItHeavy() ==> True
+```
+The code accommodates multiple types under one abstraction is called **polymorphism**
+f(istream &in)
+
 
 
 
