@@ -1380,6 +1380,155 @@ rB.isItHeavy() ==> True
 The code accommodates multiple types under one abstraction is called **polymorphism**
 f(istream &in)
 
+```C++
+class X {
+ int *x;
+public:
+ X(int n): x{new int [n]} {}
+ ~X() {delete [] x;}
+};
+class Y: public X {
+ int *y;
+ public:
+ Y(int m, int n): X{n}, y{new. int [m]} {} // the constructor of Y is correct, it will call X constructor automatically
+ ~Y() {delete [] y;}
+};
+
+X *myX = new Y{10, 20};
+delete myX; // X destructor will be invoked, get memory leak. Solution: desctructor of superclass should be virtual destructor (always do this)
+
+class Y final: public X {
+// Y is not superclass to any other subclasses, so always add final to this kind of classes
+}
+```
+
+```C++
+class One {
+ int x, y;
+ public:
+ One(int x = 0, int y = 0): x{x}, y{y} {}
+};
+
+class Two: public One { 
+ int z;
+ public:
+ Two (int x = 0, int y = 0, int z = 0): One{x, y}, z{z} {}
+};
+
+void f(One *a) {
+ a[0] = One{6, 7};
+ a[1] = One{8, 9};
+}
+
+Two myArrays[2] {{1,2,3}, {4,5,6}};
+f(myArray);
+```
+Details are misaligned: myArray{{6, 7, 8}, {9, 5, 6}}\
+Never us arrays of objects polymorphically\
+Solution: use array of pointers to objects instead
+
+```C++
+class Student {
+ protected:
+  int numCourses;
+ public:
+ virtual int fees() const; // make it virtual
+ ...
+};
+
+class Regular: public Student {
+public:
+ int fees() const override;
+ student fees
+};
+
+class coOp(): public Student {
+ public:
+ int fees() const override;
+ fees
+}
+```
+Only allow student to be regular or coop, but can not create an object of type student\
+Solution: abstract class
+```C++
+class Student {
+ ...
+public:
+ virtual int fees() const = 0; // pure virtual method. not implementing this method, so make the student to be abstract class
+}
+```
+A class with a pure virtual method is an absctract class\
+An abstract class can **NOT** be instantiated\
+Student s; --> error\
+Its purpose is to organize the subclasses\
+Subclasses to abstract class are also abstract unless they implement the pure virtual methods\
+UML: all abstract classes' names should be italic
+```C++
+class Book {
+ public:
+ //defines copy / move constructors, and copy / move assign
+}
+
+class Text: public Book {
+ string topics;
+ public: // but compiler has default construtor for us
+ // does not define copy / move operations
+};
+
+Text t {"Algorithms", "CLRS", 500, "CS"};
+Text t2 = t; // no copy constructor in Text, what happens?
+```
+Since Text inheritates from Book, so the copy constructor from Book would be invoked.But we dont want this, because the fields from Book would be copied but other fields would be ignores. Solution: define the copy constructor and other constructor in Text as well
+```C++
+// define Book constructor first and initialized from other, t2 is other which means copy other to this
+Text::Text(Const Text &other): Book{other}, topic{other.topic} {} 
+// copy constructor for Text, the number of fields of other is larger than number of fields in Book, so slicing! So only the fields of Book would be copied
+
+Text &Text::operator = (const Text &other){ // copy assignment operator
+ Book::operator=(other); // copy all the operators in other to this
+ topic = other.topic;
+ return *this;
+}
+
+Text::Text(Text &&other): Book{std::move(other)}, topic{std::move(other.topic)} {} // move constructor
+
+Text &Text::operator = (Text &&other){
+ Book::operator = (std::move(other)); //
+ topic = std::move(other.topic);
+ return *this;
+}
+
+//in the move operator, the type is rvalue reference for Book
+
+Text t1{...}, t2{...};
+Book *pb1 = &t1, *pb2 = &t2;
+
+*pb1 = *pb2; // copy assignment operator of Book, compiler looks at the pointer, the pointer is Book, so Book::operator= runs
+// The result is a partial assignment, ignore topic, Solution: make it virtual in superclass
+
+Text t{...}
+Book b{...}
+Text *pt = &t; //  
+Book *pb = &b; //  
+*pt = *pb; // copy assignment operator of Text, but only Book part is copied
+// Compiler also allows assigning Text object to Comic, but we dont want this
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
