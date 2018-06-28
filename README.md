@@ -1513,6 +1513,137 @@ Book *pb = &b; //
 *pt = *pb; // copy assignment operator of Text, but only Book part is copied
 // Compiler also allows assigning Text object to Comic, but we dont want this
 ```
+inheritancd:\
+problem: partial assignment\
+solution: virtual methods\
+suggestions:
+```C++
+class Book {
+ virtual Book &operator = (const Book &other){...}
+}
+
+class Text: public Book {
+ Text &operator = (const Book &other) override{...}
+}
+```
+new problem\
+mixed assignment\
+Solution
+```C++
+class AbstractBook {
+ string title, author;
+ int numPages;
+ protected: // do not want to override
+  AbstractBook &operator = (const AbstractBook &other);
+ public:
+  AbstractBook(...);
+  virtual ~AbstractBook()=0; // virtual method "=0" makes it pure virtual, in this way, the method is abstract
+  // the compiler can not invoke it --> problem
+  // even though it is pure virtual you can still implement it
+  // in .cc file, add this: AbstractBook::~AbstractBook(){}
+};
+```
+```C++
+// difference: typename last time we have int, others are the same, so that we can have different types
+// define student including the big 5, so we can use template for student object
+template <typename T> class list{
+ struct Node {
+ T data;
+ Node *next;
+ 
+ }
+}
+
+//"auto" same as --> list<int>::iterator, list<char>::iterator
+```
+**STL**
+The standard Template Library\
+vector: dynamic allocated array
+```C++
+vector<int> v{4, 5};
+vector<int> v2{0, 1};
+v.emplace_back(6); // v: {4, 5, 6}
+v.emplace_back(7); // v: {4, 5, 6, 7}
+
+for(auto i = 0; i < v.size(); ++i) {
+ cout<<v[i]<<endl;
+}
+
+for(vector<int>...iterator it = v.begin(); it != v.end(); ++it){ // vector<int>...iterator: can be replaced by auto
+ cout<<*it<<endl;
+}
+
+for(auto n:v){
+ cout<<n<<endl;
+}
+
+for(vector<int>::reverse_iterator it=v.rbegin(); it!=v.rend();++it) { // reverse iterator
+ cout<<*it<<endl;
+}
+
+v.pop_back(); // removes the last item in the vector
+v.erase(v.begin()); // erases the first item in the vector
+v.erase(v.begin() + 3); // erases the 4th item in the vector, begin points at the first one
+v.erase(v.end() - 1); // erases the last item in the vector, end points to the nullptr. This is same v.pop_back()
+
+// rbegin points to the last item
+// rend points to the null before the begin of the vector
+
+v.at[i]; // return the value stored in index i
+
+```
+difference between v[i] and v.at[i]
+* v[i] misuses it, it will terminate the program and not continue
+* v.at[i] this method would throw an exception, so users are able to write some code to finish the whole process and then it would terminate
+try...catch: in try part put sensitive code so as to catch it, int catch part what type of exception it is
+```C++
+#include <iostream>
+#include <vector>
+#include <stdexcept>
+using namespace std;
+int main() {
+ vector<int> v;
+ v.emplace_back(2);
+ v.emplace_back(4);
+ v.emplace_back(6); // exception is classes
+ try{
+  cout<<v.at[3]<<endl;
+ }
+ catch(out_of_range r) { // we have many types of exceptions, once this is executed the program terminates
+  cerr<<"Bad range"<<r.what()<<endl;
+ }
+ cout<<"Done"<<endl; // last three lines: actual output
+}
+```
+
+```C++
+void f() {
+ throw out_of_range("wrong"); // print "wrong"
+ 
+}
+
+void g(){f();} // h calls g, g calls f, f throws the exception
+void h(){g();} // a chain of functions calling each other, then compiler can go back and handle and catch the first one 
+
+int main() {
+ try{
+ 
+ }
+ catch(out_of_range){
+ 
+ }
+}
+```
+
+```C++
+try{
+... // when might have multiple exceptions
+}
+
+catch(...){ // really three dots
+ ... // use this to make sure all of the exceptions are handled correctly
+}
+```
 
 
 
