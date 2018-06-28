@@ -1546,11 +1546,74 @@ class AbstractBook {
 ```C++
 // difference: typename last time we have int, others are the same, so that we can have different types
 // define student including the big 5, so we can use template for student object
+#ifdef _LIST_H_
+#define _LIST_H_
 template <typename T> class list{
  struct Node {
  T data;
  Node *next;
+ Node (T data, Node *next): data{data}, next{next}{}
+ ~Node() {delete next;}
+ };
+ Node *theList = nullptr;
+ public:
+  class iterator {
+   Node *p;
+   explicit iterator(Node *p): p{p} {}
+   public:
+    T &operator*() const{return p -> data;}
+    iterator operator++() {
+     p = p -> next;
+     return *this;
+    }
+    bool operator == (const iterator &other) const{
+    return p == other.p;
+    }
+    bool operator!=(const iterator &other) const {
+     return !(*this == other);
+    }
+    friend class List<T>;
+    };
+    iterator begin() {return iterator(theList);}
+    iterator end() {return iterator(nullptr);}
+    void addToFront(T n) {theList = new Node(n, theList);}
+    T ith(int i) {
+     Node *cur = theList;
+     for (int j = 0; j < i && cur; ++j, cur = cur -> next);
+     return cur -> data;
+    }
+    ~List() {delete theList;}
+  };
+}
+#endif
+
+#include <isotream>
+#include "listiter.h"
+using namespace std;
+int main() {
+ List<int> l;
+ l.addToFront(1);
+ l.addToFront(2);
+ l.addToFront(3);
+ for (auto it = l.begin(); it != l.end(); ++it) {
+  cout<<*it<<endl;
+ }
+ cout<<endl;
+ for (auto &n:l) {
+  ++n;
+  cout<<n<<endl;
+ }
+ cout<<endl;
+ for (auto n:l) {
+  cout<<n<<endl;
+ }
  
+List<cahr> l2;
+ l2.addToFront('a');
+ l2.addToFront('b');
+ l2.addToFront('c');
+ for (auto it = l2.begin(); it != l2.end();++it) {
+  cout<<*it<<endl;
  }
 }
 
