@@ -1707,12 +1707,122 @@ catch(...){ // really three dots
  ... // use this to make sure all of the exceptions are handled correctly
 }
 ```
+Always make super class abstract. The beauty of this is that when there is a pointer points to the subclass, the compiler would look at the actual object type instead of pointer type.
+* exception types
+  * length_error
+  * bad_alloc
+  
+Embrace template embrace abstract class\
+Not only create template for classes, but also for functions
+```C++  
+bool operation != .... {return ! &this == other}
+
+template <typename T, typename Fn>
+ void for_each(AbstractIterator<T> &&first, AbstractIterator<T> &&last, Fn f) {
+ while (first != last) {
+  f(*first);
+  ++first;
+ }
+ }
+```
+
+## Observer Pattern
+* Behavioral Pattern
+* Publish-subscribe model
+* Include one class: publisher / subject: to generate data
+* Generare one or more subscriber / observer: receive data and react on it
+
+(Italic means abstract)\
+
+   *subject*    <> ---\*    *observer*\
+  notifyobserver()          *notify()*\
+  attach(observers)\
+  detach(observers)\
+         ^                      ^\
+         |                      |\
+         |                      |\
+  ConcreteSubject ---- <>  ConcreteObservers\
+    getState()                notify()
+    
+
+* Sequence of method calls
+  * subject's state is updated
+  * subject notifyobservers calls each observers notify
+  * each observer calls ConcreteSubject.getState() to query the state / change and reads on it
+ 
+ 
+```C++
+class Subject {
+ vector<Observer*> observers; // implement <> ---- \* this relationship, since many observers, so it is a vector
+public:
+ Subject();
+ 
+ void attach(Observer *ob) {observers.emplace_back(ob);}
+ 
+ void detach(Observer *ob){
+ 
+ }
+ 
+ void notifyObservers() {
+  for (auto &ob:observers) ob->notify();
+ }
+ 
+}
+
+class Observer {
+ public:
+  virtual void notify() = 0;
+  
+}
+
+class HorseRace: public Subject { // concretesubject is the horserace
+
+}
+
+class Bettor: public Observer {
+public:
+ Bettor(HorseRace *hr, std::string name, std::string horse):
+  subject{hr}
+}
+```
+
+## Decorator Pattern
+* Structural pattern
+* To add additional responsibilities to an object dynamically (during runtime)
 
 
+               *component*
+               operation()
+       ^                      ^    |
+       |                      |    |  
+       |                      |    <>
+ConcreteComponent           decorator (not only inheritance from component, but it also has component)\
+                           operation()\
+                                ^\
+                            ----------------------\
+                           |                      |\
+                     concreteDecoratorA   concreteDecoratorsB\
+                     operation()            operation()
+```C++
+class Pizza { // component
 
+}
 
+class CrustAndSauce: public Pizza { // basic one
 
+}
 
+class Decorator: public Pizza {
+ protected:
+  Pizza *component; // it has component
+ public:
+  Decorator(Pizza *p): 
+}
+
+class StuffedCrust: public Decorator {
+
+}
+```
 
 
 
