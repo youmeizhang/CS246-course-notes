@@ -1756,33 +1756,67 @@ class Subject {
  vector<Observer*> observers; // implement <> ---- \* this relationship, since many observers, so it is a vector
 public:
  Subject();
- 
  void attach(Observer *ob) {observers.emplace_back(ob);}
- 
  void detach(Observer *ob){
- 
+  for (auto it = observers.begin();it!=observers.end();++it) {
+   if(*it == ob) {
+    observers.erase(it);
+    break;
+   }
+  }
  }
  
  void notifyObservers() {
   for (auto &ob:observers) ob->notify();
  }
- 
-}
+ virtual ~Subject() = 0;
+};
+
+Subject::~Subject(){}
 
 class Observer {
  public:
   virtual void notify() = 0;
-  
-}
+  virtual ~Observer(){}
+};
 
 class HorseRace: public Subject { // concretesubject is the horserace
-
-}
+ ifstream in;
+ string lastWinner;
+public:
+ HorseRace(string source): in{source}{}
+ ~HorseRace(){}
+ bool runRace(){return in>>lastWinner;}
+ string getState() const {return lastWinner;}
+};
 
 class Bettor: public Observer {
+ HorseRace *subject;
+ string name
 public:
  Bettor(HorseRace *hr, std::string name, std::string horse):
-  subject{hr}
+  subject{hr}, name{name}, myHorse{horse} {
+   subject->attach(this);
+  }
+  
+void notify() {
+ string winner=subject->getState();
+ cout<<(winner==myHorse?"Win!":"Lose")<<endl;
+}
+
+~Bettor() {
+ subject->detach(this);
+}
+};
+
+int main() {
+ HorseRace hr{"souce.txt"};
+ Bettor Larry{&hr, "Larry", "RunsLikeACow"};
+ Bettor Moe{&hr, "Moe", "Molasses"};
+ Bettor Curly{&hr, "Curly", "TurtlePower"};
+ while (hr.runRace()) {
+  hr.notifyObservers();
+ }
 }
 ```
 
@@ -1805,22 +1839,59 @@ ConcreteComponent           decorator (not only inheritance from component, but 
                      operation()            operation()
 ```C++
 class Pizza { // component
-
-}
+public:
+ virtual float price() const = 0;
+ virtual string desc() const = 0; // desc means description
+ virtual ~Pizza();
+};
 
 class CrustAndSauce: public Pizza { // basic one
-
-}
+public:
+ float price() const override {return 5.99;}
+ string desc() const override {return "Pizza";}
+};
 
 class Decorator: public Pizza {
  protected:
   Pizza *component; // it has component
  public:
-  Decorator(Pizza *p): 
+  Decorator(Pizza *p): component{p}{}
+  virtual ~Decorator() {delete component;}
 }
 
 class StuffedCrust: public Decorator {
+public:
+ StuffedCrust(Pizza *p): Decorator{p}{}
+ float price() const override {return component->price() + 2.69;}
+ string desc() const override {return component->desc() + "with stuffed crust";}
+};
 
+class Topping: public Decorator {
+ string theTopping;
+public:
+ Topping(string topping, Pizza *p): Decorator{p}, theTopping{topping} {}
+ float price() const override {return component->price() + 0.75;}
+ string desc() const override {
+  return component->desc() + " with " + theTopping;
+ }
+};
+
+int main() {
+ Pizza *myPizzaOrder[3];
+ myPizzaOrder[0] = new Topping{"pepperoni", new Topping{"cheese", new CrustAndSauce}};
+ myPizzaOrder[1] = new StuffedCrust{new Topping{"cheese", new Topping{"mushrooms", new CrustAndSauce}}};
+ myPizzaOrder[2] = new DippingSauce{"garlic", new Topping{"cheese", new Topping{"cheese", new Topping{"cheese", new Topping{"cheese", new CrustAndSauce}}}}};
+ 
+ float total = 0.0;
+ for (int i=0; i<3; ++i){
+  cout<<myPizzaOrder[i]->description()<<":"<<myPizzaOrder[i]->price()<<endl;
+  total+=myPizzaOrder[i]->price();
+ }
+ 
+ cout<<endl<<"Total cost:"<<total<<endl;
+ for (int i=0;i<3;++i) {
+  delete myPizzaOrder[i];
+ }
 }
 ```
 
