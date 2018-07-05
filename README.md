@@ -1620,7 +1620,7 @@ List<cahr> l2;
 //"auto" same as --> list<int>::iterator, list<char>::iterator
 ```
 **STL**
-The standard Template Library\
+The Standard Template Library\
 vector: dynamic allocated array
 ```C++
 vector<int> v{4, 5};
@@ -1824,7 +1824,6 @@ int main() {
 * Structural pattern
 * To add additional responsibilities to an object dynamically (during runtime)
 
-
                *component*
                operation()
        ^                      ^    |
@@ -1895,7 +1894,74 @@ int main() {
 }
 ```
 
+## Factory Method Pattern
 
+  (product)           (creator)  
+   *Enemy*             *level*          
+      ^            \*factory Method   
+      |                   |
+   \-------           ----------
+   |       |         |          |
+ Turtle  Bullet   NormalLevel  Castel
+
+Factory method returns an object of type product (Enemy)\
+Always make the superclass abstract, so that the pointer points to the abstract class is able to point to any type of subclasses.
+
+## Template Method Pattern
+* Public virtual method
+  * We want to create the interface for the subclass, virtual method are interface to subclasses
+  * The users can call them, interface to users
+```C++
+class Turtle {
+ public:
+ void draw() {
+  drawHead();
+  drawShell();
+  drawFeet();
+ }
+ private:
+ void drawHead() {...}
+ void drawFeet() {...}
+ virtual void drawShell() = 0;
+};
+
+class RedTurtle: public Turtle {
+ void drawShell() override {
+ 
+ }
+};
+
+class GreenTrutle: public Turtle {
+ void drawShell() override {
+ 
+ }
+}
+```
+How to seperate these two roles?\
+The parameters in the abstract class are invariance, but it can allow users can change the invariance. How?\
+Wrap it 
+
+## Non-Vitural Interface (NVI idiom)
+* All public methods should be non-virtual 
+* All virtual methods should be private or at least protected
+* Except the destructor
+
+```C++
+#include<map>
+map<string, int> m; // should indicate the type of key and the type of value
+m["abc"] = 1;
+m["def"] = 4;
+cout<<m["abc"]<<endl;
+cout<<m["ghi"]<<endl; // create a new pair with default value, here is 0
+m.erase("abc");
+
+for (auto &p:m) {
+cout<<p.first<<" "<<p.second<<endl; // first is for the key and second is for the value, ascending order for the key
+// but it is not the same order how they are stored in the map but recommend sorting the data when store it
+}
+```
+
+## Visitor Pattern
 
 
 
