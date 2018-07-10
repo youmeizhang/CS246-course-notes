@@ -1962,6 +1962,164 @@ cout<<p.first<<" "<<p.second<<endl; // first is for the key and second is for th
 ```
 
 ## Visitor Pattern
+ ```c++
+ // four methods here: two weapon and two enemy
+ 
+ class Enemy{
+  public:
+   virtual void beStruckBy(Weapon &w) = 0; // because it will act differently according to the enemy
+   ...
+ };
+ 
+ class Turtle: public Enemy {
+  public:
+   void beStruckBy(Weapon &w) override {w.strike(*this;}
+ };
+ 
+ class Bullet: public Enemy {
+  public:
+    void beStruckBy(Weapon &w) override {w.strike(*this;}
+ }
+ 
+ class Weapon{
+  public:
+   virtual void strike(Turtle &t) = 0; // overloading
+   virtual void strike(Bullet &b) = 0;
+ };
+ 
+ class Stick: public Weapon{
+ public:
+  void strike(Turtle &t) {
+   // strike turtle with stick
+  }
+  
+  void strike(Bullet &b) {
+  // strike bullet with stick
+  }
+  
+ };
+ // Rock is similar here
+ 
+ Enemy *e = new Bullet(...); // pointer to enemy: abstract class, e is Bullet type
+ Weapon *w = new Rock(...);
+ e->beStruckBy(*w); // Bullet struck by Rock
+ 
+ // how to add addtitional gifts to it? 
+ // solution: add extra components in the class, very easy to do so under this pattern
+```
+The only problem of abstract class is that it can not create an object
+
+## Circular Include Dependency
+```C++
+class A {
+ B b
+};
+
+class B {
+ A c
+}
+```
+when A is constructed, it needs to look at B, so that compute the size of B and estimate the memory for it\
+But compiler does not need to know the size of B and the size of A
+Solution:
+```C++
+class B;
+class A {
+ B *b // a pointer can actually minimize the memory allocation
+};
+
+class A;
+class B {
+ A *c
+}
+```
+* Advice
+  * Include as few .h files as possible .h file
+  * Include .h files in .cc files whenever possible
+
+Minimize the dependency among files
+```C++
+class XWindow {
+// implementation of a window
+ Display *d;
+ Window w;
+ int s;
+ GC gc;
+ unsigned long colours[10];
+ 
+ public:
+ ...
+}
+```
+Bad solution for defining a window in this way, because once we compile public functions then it needs to compile all the implementation again\
+Solution: seperate files, just need to recompile that specific class only
+```C++
+#include<X11/Xlib.h>
+struct XWindowImpl {
+ Display *d;
+ Window w;
+ int s;
+ GC gc;
+ unsigned long colours[10];
+};
+
+// window.h
+class XWindowImpl; // forward declare the impl.class
+class XWindow {
+ XWindowImpl *pImpl;
+ public:
+ ... // no change
+};
+
+// window.cc
+#include "window.h"
+#include "XWindowImpl.h"
+
+XWindow::XWindow(...): pImpl {new XWindowImpl}...{...}
+```
+* Rule 2: Single Responsibility prinple
+  * each class should have only one reason to change
+  
+## Coupling
+The degreee to which distinct program modules depend on each other (the lower the better)\
+Why: changing one module might nend to recompile other module, it affects each other\
+Low coupling means more flexible to reuse modules\
+friend: increase coupling\
+sharing global data: increase\
+
+Therefore, minimizing passing structure between methods and modules
+
+## Cohesion
+How closely elements of the same module are related to each other (the higher the better)\
+Why: high cohesion means few methods would rely on one method, low cohesion hard to maintain and update
+
+```C++
+// maintain the chessboard and print
+class ChessBoard {
+ ...
+ {
+  cout<<"your move"<<endl;
+ }
+ ...
+}
+```
+Problem: two many responsibilities inside one class\
+Solution: have one module for printing and maintaining respectively\
+
+For manipulating, printing, controlling data, we have another pattern
+
+## Pattern MVC: Model View Controller
+Make sure you have model, view and controller. Controller can use and update the data in both model and view and controller can communicate with users\
+Seperate the distinct notions of the data ("Model"), the presenatation of the data ("View") and the control manipulation of the data ("Controller"). This can minimizing the coupling as well.
+
+
+
+
+
+
+
+
+
 
 
 
