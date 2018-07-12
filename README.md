@@ -2112,6 +2112,122 @@ For manipulating, printing, controlling data, we have another pattern
 Make sure you have model, view and controller. Controller can use and update the data in both model and view and controller can communicate with users\
 Seperate the distinct notions of the data ("Model"), the presenatation of the data ("View") and the control manipulation of the data ("Controller"). This can minimizing the coupling as well.
 
+## Exception Safety & RAII
+RAII: Resource Scquisition Is Initialization (C++ idiom)
+```C++
+ void f() {
+ Myclass *p = new Myclass; // whatever Myclass is is located in heap
+ Myclass mc; // p, mc are in stack
+  g();
+  delete p;
+}
+```
+Problem: what happen when g throws an exception? It stops immediately The compiler will 
+
+* if an exception is raised: what is guarantted before terminating?
+  * stack-unwinding: all stack-allocated data is cleaned up, destructor runs, memory recleaned\\
+  mc is popped which is an object, so destructor runs, so the problem is: **Bat** heap-allocated data will not be freed 
+  
+Solution
+```C++
+try {
+ g();
+}
+catch (...) {
+ delete p;
+ throw;
+}
+// we dont like this kind of solution because it will duplicate the code
+```
+ * advice
+   * use stack-allocated data as much as possible, use heap-allocated data as few as possible, because they are cleaned up by compiler automatically
+ 
+Smart pointer: RAII
+1. It is an object, when it is poped from stack, the heap data that it is pointing is freed
+2. When it is poped, it will call its own destructor so we dont need to have "delete p"
+
+* there are three levels of exception safety for a function of
+  * Basic guarantee
+  * Strong guarantee: if an exception is thrown, it will undo the previous steps and then finish wihtout crashing
+  * No throw guarantee: designed a function that will never throw an exception
+
+## RAII
+Every resource should be wrapped in a stack-allocated object, whose destructor deletes it. It is a class so we can define big 5. \
+class std::unique_ptr<T>: a class that holds T*, the destructor will delete the pointer (the data that T* is pointing at on heap)
+ 
+```C++
+#include <iostream>
+#include <memory>
+using namespace std;
+class Basic {
+ public:
+  int x;
+  Basic(int x): x(x) {cout<<"Basic ctor running(x="<<x<<")"<<endl;}
+  ~Basic() {cout<<"Basic dtor running"<<endl;}
+};
+
+int main() {
+ auto bp = make_unique<Basic>(5); // the constructor of Basic is called first
+ cout<<"Acess x field through smart ptr: "<<bp->x<<endl;
+}
+ // uniue_ptr<Basic>bp = auto bp
+ // reach the end of main, bp is out of scope, so destructor free the data in stack
+ 
+ //output:
+ //Basic ctor running(x=5)
+ //Access x field through smart ptr: 5
+ //Basic ctor running
+```
+```C++
+class c{...};
+unique_ptr <c> p {new c{...}};
+auto p2 = p; // p is lvalue and p2 is first constructed (copy constructor), error here
+```
+Problem: p2 free the data in heap first and then p tries to free the data but nothing to free, it gets confusing\
+Solution: only one unique smart pointer points to that data, the rest are just normal pointer, but the unique pointer should be the last one to be popped (challenging!!)
+``` C++
+#include <utility>
+#include <isotream>
+#include <typename T> class unique_ptr {
+ T *ptr;
+ public:
+  unique_ptr(T *p): ptr{p} {}
+  ~unique_ptr(){delete ptr;}
+  unique_ptr(const unique_ptr<T> &other) = delete;
+  unique_ptr<T> &operator=(const unique_ptr<T> &other) = delete;
+  unique_ptr(unique_ptr<T> &&other): ptr{other.ptr}{other.ptr = nullptr;}
+  unique_ptr<T> &oerator = (unique_ptr<T> &&other) {
+   using std::swap;
+   swap(ptr, other.ptr);
+   return *this;
+  }
+  T &operator*() {return *ptr;}
+  T *operator->() {return ptr;}
+};
+
+class C {
+ int x;
+ public:
+  C(int x): x{x} {std::cout<<"Ctor running with x="<<x<<std::endl;}
+  ~C() {std::cout<<"Dtor running."<<std::endl;}
+};
+
+int main() {
+ unique_ptr<C> p{new C{10}};
+ // unique_ptr<C> p2 = p; // error
+}
+
+//output:
+//Ctor running with x = 10
+//Dtor running.
+```
+
+## share pointer
+class std::shared_ptr<T>: a class that holds T*, it maintains a reference count (which counts how many shared_ptr are pointing to the ame data. The desctructor will free the heap-allocated data only if the counter indicates that the current object is the last shared_ptr for that data)
+
+To sum up:\
+Use shared_ptr and unique_ptr as much as possible, they will dramatically reduce memory leaks.\
+When the Resource is more complicated, design your own wrapper (a class that holds a pointer to the Resource, with appropriate methods (ctor, dctor...))
 
 
 
