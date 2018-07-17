@@ -2147,9 +2147,10 @@ Smart pointer: RAII
 2. When it is poped, it will call its own destructor so we dont need to have "delete p"
 
 * there are three levels of exception safety for a function of
-  * Basic guarantee
+  * Basic guarantee: some valid state, doesn't leak
   * Strong guarantee: if an exception is thrown, it will undo the previous steps and then finish wihtout crashing
   * No throw guarantee: designed a function that will never throw an exception
+  * Not exception safe
 
 ## RAII
 Every resource should be wrapped in a stack-allocated object, whose destructor deletes it. It is a class so we can define big 5. \
@@ -2228,6 +2229,172 @@ class std::shared_ptr<T>: a class that holds T*, it maintains a reference count 
 To sum up:\
 Use shared_ptr and unique_ptr as much as possible, they will dramatically reduce memory leaks.\
 When the Resource is more complicated, design your own wrapper (a class that holds a pointer to the Resource, with appropriate methods (ctor, dctor...))
+
+```C++
+struct A{ void g(); };
+struct B{ void h(); };
+
+class C{ 
+ A a;
+ B b;
+ 
+ public:
+  void f() {
+   a.g(); // strong guarantee, if a.g() throws an exception then b.h() will never be called
+   b.h(); // if a.g() is fine and b.h() throws an exception: (set b to its original state) C is in inconsistent state
+  }
+};
+```
+How to fix it by not doing anything or do both of them inside f()?\
+Solution
+```C++
+struct A{ void g(); };
+struct B{ void h(); };
+
+class C{ 
+ A a;
+ B b;
+ 
+ public:
+  void f() {
+   a.g();
+   try {
+    b.h();
+   } catch (...) {
+    a.undo_g(); // hard to undo, for example a.g() deletes something in A, how to undo?
+    throw;
+   }
+  }
+};
+```
+Solution
+```C++
+struct A{ void g(); };
+struct B{ void h(); };
+
+class C{ 
+ A a;
+ B b;
+ 
+ public:
+  void f() {
+  A atmp = a;
+  B btmp = b;
+  
+  atmp.g(); // if either throws then only change the state of atmp and btmp
+  btmp.h(); // 
+  
+  a = atmp; 
+  b = btmp; // if b copy constructor throws an exception, b is not going to get updated, not exception safe
+  }
+};
+```
+Best Solution
+```C++
+struct A{ void g(); };
+struct B{ void h(); };
+
+class C{ 
+ struct Impl {
+   A a;
+   B b;
+ }
+ 
+ unique_ptr<Impl> cImpl; // 
+ 
+ public:
+  void f() {
+   auto tmp = make_unique<Impl>(*cImpl); // make_unique
+   // make_unique: Impl* tmp = new Impl{*cImpl};
+   // if to here, no change to cImpl
+   
+    tmp->a.g(); // if either of them calls throws, they modify the state of the tmp, they don't change anything in cImpl
+    tmp->b.h();  
+    // if either of these throw, no change to cImpl either
+  
+    std::swap(cImpl, tmp); 
+     // this will never throw, state of tmp and pointing to an object
+    // if neither of above throw, guaranteed no throw, will succeed
+  }
+};
+```
+## A std::vector
+```C++
+#include <vector>
+using namespace std;
+
+class MyClass {};
+
+void f() {
+ vector<unique_ptr<MyClass>> v;
+ // vector<MyClass*> v;
+ // unique ptr is great 
+ 
+ // ...
+ 
+ for (auto p : v) delete p;
+}
+```
+* emplace_back
+  * strong exception guarantee
+
+No throw guarantee: C++ has the syntax for: void f() noexcept;
+  
+## Cast
+* reinterpret_cast
+* static_cast
+* dynamic_cast
+* const_cast
+
+* static_cast
+  * static_pointer_cast
+  
+```C++
+void f(int x);
+void f(double x);
+
+int main() {
+ double d = 3.14;
+ f( static_cast<int>(d) ); // do the conversion from douvle into int
+ 
+ Book *b = new Text {...};
+ Text *t = static_cast<Text*>(b); // a little bit risky for using static cast
+ 
+}
+```
+* reinterpret_cast
+  * make these bits something else
+  
+```C++
+unsigned long dhex = reinterpret_cast<unsigned long>(d);
+Turtle *t = reinterpret_cast<Turtle*>(b);
+```
+
+* const_cast
+  * casts away functions
+  * const_pointer_cast
+ ```C++
+void f(int x);
+void f(double x);
+void g(int& x); // i know this doesn't mutate x
+
+void h(const int& x) {
+
+ g(const_cast<int&>(x));
+ 
+}
+
+int main() {
+ double d = 3.14;
+ f( static_cast<int>(d) ); // do the conversion from douvle into int
+ unsigned long dhex = reinterpret_cast<unsigned long>(d);
+ 
+ Book *b = new Text {...};
+ Turtle *t = reinterpret_cast<Turtle*>(b);
+ 
+}
+``` 
+  
 
 
 
