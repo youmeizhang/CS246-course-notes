@@ -2349,13 +2349,14 @@ No throw guarantee: C++ has the syntax for: void f() noexcept;
 * static_cast
   * static_pointer_cast
   
+These are for regular pointers (raw pointers)
 ```C++
 void f(int x);
 void f(double x);
 
 int main() {
  double d = 3.14;
- f( static_cast<int>(d) ); // do the conversion from douvle into int
+ f( static_cast<int>(d) ); // do the conversion from double into int
  
  Book *b = new Text {...};
  Text *t = static_cast<Text*>(b); // a little bit risky for using static cast
@@ -2368,25 +2369,34 @@ int main() {
 ```C++
 unsigned long dhex = reinterpret_cast<unsigned long>(d);
 Turtle *t = reinterpret_cast<Turtle*>(b);
-```
 
+Student s;
+Turtle *t = reinterpret_cast<Turtle*>(&s); // treat student as turtle
+```
 * const_cast
   * casts away functions
   * const_pointer_cast
  ```C++
+ void g(int *p); // why not add const int here? Because in some case some fields need to be changed
+ void f(const int *p) {
+ ...
+ g(const_cast<int*>(p)); // so g is not going to change what p is pointing at
+ ...
+ }
+ 
 void f(int x);
 void f(double x);
 void g(int& x); // i know this doesn't mutate x
 
 void h(const int& x) {
 
- g(const_cast<int&>(x));
+ g(const_cast<int&>(x)); // x is not gonna change
  
 }
 
 int main() {
  double d = 3.14;
- f( static_cast<int>(d) ); // do the conversion from douvle into int
+ f( static_cast<int>(d) ); // do the conversion from double into int
  unsigned long dhex = reinterpret_cast<unsigned long>(d);
  
  Book *b = new Text {...};
@@ -2394,8 +2404,124 @@ int main() {
  
 }
 ``` 
-  
+* Dynamic_cast
+  * More safe than static_cast because it will check consumed pointers, if it is null pointer, then it will return null pointer 
+```C++
+Book *pb = ...;
+static_cast<Text*>(pb)->getTopic(); // it is not safe
 
+Book *pb = ...; // dynamic_cast works only class with more than one methods
+Text *pt = dynamic_Cast<Text*>(pb);
+
+if (pt) cout<<pt->getTopic();else cout<<"Not a ttext";
+```
+* const shared_ptr to shared_ptr
+  * static_pointer_cast
+  * dynamic_pointer_cast
+  * const_pointer_cast
+  
+They are defined in **memory**\
+Dynamic pointers also works with references
+```C++
+Text t {...}
+Text &b = t;
+Text &t2 = dynamic_cast<Text&>(b); // so b can not be null pointer, otherwise &t2 would be initialized with null pointer, raise a exception, be aware of this part
+
+// references can not be a null pointer
+```
+
+```C++
+template<typename T> T min(T x, T y) { // every value that less is defined that we can apply min for it
+ return x < y ? x : y;
+}
+int f() { // 
+ int x = 1, y = 2;
+ int z = min(x, y); // T = int, it is not calling any error, because it is ok to undeclared the type as long as it is clear enough, x and y are int, so z is int
+ 
+ // int z = min<int>(x, y); // no need to write like this, but in class template, you should always classify the type
+}
+
+char w = min('a', 'c'); // T = char
+auto f = min(1.0, 3.0); // T = double
+```
+
+```C++
+//argument should be any collections with int elements, support not equal, ++, and d reference, any collections that can be iterated, f is a function that can be applied in each element
+
+void foreach(AbstractIterator start, AbstractIterator finish, int (*f)(int)){ // a function, return nothing, name f, type: function pointer, consume one parameter with type int
+ while (start != finish) { // [start, finish)
+ f(*start);     // when we can call foreach? 
+ ++start;
+ }
+}
+
+tmplate <typename Iter, typename Func> // a template 
+void for_each (Iter start, Iter finish, Func f) {
+ // same as before
+}
+
+void f(int n) {cout<<n<<endl;}
+...
+int a[] = {1, 2, 3, 4, 5};
+...
+for_each(a, a+5, f); // prints the array
+```
+The algorithm library(STL)
+```C++
+// Eg.1: for_each(as described above)
+
+// Eg.2:
+template <typename Iter, typename T>
+Iter find(Iter first, Iter last, const T &val) {
+ //
+ //
+}
+
+// Eg.3: count -- like find, but returns the number of occurrences of val
+
+// Eg.4:
+template <typename InIter, typename OutIter>
+OutIter copy(InIter first, InIter last, OutIter result) {
+ //
+ //
+ //
+ 
+}
+
+vector<int> v {1, 2, 3, 4, 5, 6, 7};
+vector<int> w(4);
+
+copy(v.begin() + 1, v.begin() + 5, w.begin());
+// w: 2, 3, 4, 5
+
+//Eg.5:
+template <typename InIter, typename OutIter, typename Func>
+OutIter transform(InIter first, InIter last, OutInter result, Func f){
+ while (first != last) {
+  *result = f(*first);
+  ++first;
+  ++result;
+ }
+return result;
+}
+
+int add1(int n) {return n + 1;}
+...
+vector <int> v {2, 3, 5, 7, 11};
+vector <int> w(v.size());
+transform(v.begin(), v.end(), w.begin(), add1);
+```
+* Lambdas
+  * motivation: lambda has no name? how to call a function without name? just dont call it whole definition is passed as a argument
+  * c uses keywords "lambda", in C++ uses: \[] 
+```C++
+vector <int> v {...};
+bool even (int n) {return n % 2 == 0;} // boolean function
+int x = count_if(v.begin(), v.end(), even); // template function, here define even just for calling once?
+
+using lambda:
+int x = count_if(v.begin(), v.end(), [](int n) {return n % 2 == 0;}); // count_if boolean type
+```
 
 
 
