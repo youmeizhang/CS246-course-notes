@@ -2525,32 +2525,95 @@ int x = count_if(v.begin(), v.end(), [](int n) {return n % 2 == 0;}); // count_i
 Final Exam Review\
 Q1
 ```C++
-// add a constructor consumes zero argument
-One t1, t2 // can not call default constructor with zero argument
+class One {
+ int x, y;
+ public:
+  One(int x, int y): x{x}, y{y}{}
+  // add a constructor consumes zero argument
+};
+
+class Two {
+ One t1, t2;
+ // can not call default constructor with zero argument
+ ...
+};
+...
+Two b;
 ```
 
  Q2
  ```C++
+ class X{ // superclass
+  int *x;
+  public:
+  X(int n): x{new int[n]}{}
+  ~X(){delete []x;}
+ };
+ 
+ classs Y:public X {
+  int *y;
+  public:
+   Y(int m, int n): X{n}, y{new int[m]}{}
+   ~y(){delete [] y;}
+ };
+ 
+ X *myX = new Y{10, 20};
+ delete myX;
  // compiler looks myX as X object, so destructor of Y is not called and can not delete myX
- // the destructor of X is not virtual
+ // because the destructor of X is not virtual
  // so make destructor of X virtual
 ```
 
 Q3
 ```C++
-a->d // super class pointer can not access sub-class member
+class A {
+ ...
+ public:
+ void method(){...}
+};
+
+class B: public A {
+ public:
+  double d;
+  ...
+};
+B b;
+A *a = &b;
+cout<<a->d<<endl; // super class pointer can not access sub-class member
 ```
 
 Q4
 ```C++
+class A {
+ ...
+ public:
+ virtual void method(){...}
+};
+
+class B: public A {
+ public:
+  double d;
+  ...
+};
+B b;
 // super class A is pure virtual, sub-class is also abstract, so can not make instances
 ```
 
 Q5
 ```C++
+struct DoubleOwnership {
+ std::unique_ptr<int> pi;
+ std::unique_ptr<double> pd;
+ DoubleOwnership(int* pi_, double* pd_): pi{pi_}, pd{pd_}{}
+};
+
+int foo() {
+ DoubleOwnership object {new int(42), new double(3.14)};
+ ...
+ // construct a new object, first construct int and double on heap, what if something wrong with double, and then it can not finish, no smart pointer pointing at something in the heap, so when it is out of scope, nothing can delete that on the heap. This cause memory leak
+}
 // unique_ptr when it is out of scope, it will be deleted
-// this would cause memory leak
-object // construct a new object, first construct int and double on heap, what if something wrong with double, and then it can not finish, no smart pointer pointing at something in the heap, so when it is out of scope, nothing can delete that thing on the heap. This cause memory leak
+// this code would cause memory leak
 ```
 
 Q6
@@ -2570,25 +2633,26 @@ public:
   return doG();
  }
  
- virtual ~C();
+ virtual ~C(); // except the destructor
  private:
   virtual int doG();
 };
 ```
 
-Q7
-```C++
-// subject doesnot own the object can not delete all the subject observers
-```
+Q7\
+In the observer pattern, the Subject's destructor should delete all of the Subject's observers. True or False?\
+False. Subject does not own the object, so it can not delete all the Subject's observers.\
+
 
 Q8
 ```C++
 const int c = 5;
 int main() {
-
+ int *d = const_cast<int *>(&c); // compiler trust us that we dont change the value of c
+ *d = 10; // c is global variable, but, this is changing the value of c, cause problems 
+ ...
 }
-int *d = // compiler trust us that we dont change the value of c
-*d = 10 // c is global variable, but, this is change the value of c, cause problems 
+// this code will compile but not run safely
 ```
 
 Q9
@@ -2612,7 +2676,6 @@ Because if it can be copied, then two unique ptrs own the same data. After it is
   unique_ptr<C> q = f();   // rvalue, move ctor would be invoked, so it is stealing the data, no double ownership
   // so no two ptr pointing at same data, it works instead of copy ctor
  };
-
  ```
  
  
