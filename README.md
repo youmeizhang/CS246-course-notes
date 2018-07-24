@@ -2522,10 +2522,100 @@ int x = count_if(v.begin(), v.end(), even); // template function, here define ev
 using lambda:
 int x = count_if(v.begin(), v.end(), [](int n) {return n % 2 == 0;}); // count_if boolean type
 ```
+Final Exam Review\
+Q1
+```C++
+// add a constructor consumes zero argument
+One t1, t2 // can not call default constructor with zero argument
+```
 
+ Q2
+ ```C++
+ // compiler looks myX as X object, so destructor of Y is not called and can not delete myX
+ // the destructor of X is not virtual
+ // so make destructor of X virtual
+```
 
+Q3
+```C++
+a->d // super class pointer can not access sub-class member
+```
 
+Q4
+```C++
+// super class A is pure virtual, sub-class is also abstract, so can not make instances
+```
 
+Q5
+```C++
+// unique_ptr when it is out of scope, it will be deleted
+// this would cause memory leak
+object // construct a new object, first construct int and double on heap, what if something wrong with double, and then it can not finish, no smart pointer pointing at something in the heap, so when it is out of scope, nothing can delete that thing on the heap. This cause memory leak
+```
+
+Q6
+```C++
+class C {
+public:
+ void f();
+ virtual int g();
+ virtual ~C();
+};
+
+// rewrite it as a NVI
+class C {
+public:
+ void f();
+ int g(){
+  return doG();
+ }
+ 
+ virtual ~C();
+ private:
+  virtual int doG();
+};
+```
+
+Q7
+```C++
+// subject doesnot own the object can not delete all the subject observers
+```
+
+Q8
+```C++
+const int c = 5;
+int main() {
+
+}
+int *d = // compiler trust us that we dont change the value of c
+*d = 10 // c is global variable, but, this is change the value of c, cause problems 
+```
+
+Q9
+```C++
+Explain why unique_ptr can not be copied?
+Because if it can be copied, then two unique ptrs own the same data. After it is out of scope, the first destructor deletes the data, and then second desctructor has no data to delete 
+```
+ Q10
+ ```C++
+// will q contain a valid pointer to a valid heap object? 
+// answer: valid
+ class C{...};
+ unique_ptr<C> f(){
+ ...
+ unique_ptr<C> p = make_unique<C> (...);
+ ...
+ return p;
+ };
+ 
+ int main() {
+  unique_ptr<C> q = f();   // rvalue, move ctor would be invoked, so it is stealing the data, no double ownership
+  // so no two ptr pointing at same data, it works instead of copy ctor
+ };
+
+ ```
+ 
+ 
 
 
 
